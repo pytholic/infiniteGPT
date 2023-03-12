@@ -44,6 +44,18 @@ def gen_mapping(chars):
     return stoi, itos
 
 
+def encode(stoi):
+    # encoder: take a string, output a list of ints
+    encoded = lambda s: [stoi[c] for c in s]
+    return encoded
+
+
+def decode(itos):
+    # decode: take a list of ints, output a string
+    decoded = lambda l: "".join(itos[i] for i in l)
+    return decoded
+
+
 # Function to split data into train and val
 def split_data(data, split_ratio):
     # TODO create split function
@@ -133,18 +145,13 @@ parser.add_arguments(Args, dest="options")
 args_namespace = parser.parse_args()
 args = args_namespace.options
 
-# get all the unique characters in corpus
+# Get all the unique characters in corpus
 chars = sorted(list(set(text)))
 vocab_size = len(chars)
 logger.info(f"Total vocabulary size is {vocab_size}.")
 
-# generate the string to int mapping and vice versa
-stoi, itos = gen_mapping(chars)
-
-# encoder: take a string, output a list of ints
-encode = lambda s: [stoi[c] for c in s]
-# decode: take a list of ints, output a string
-decoded = lambda l: "".join(itos[i] for i in l)
+# Generate the string to int mapping and vice versa
+stio, itos = gen_mapping(chars)
 
 # Encode the dataset
 data = torch.tensor(encode(text), dtype=torch.long)
@@ -158,15 +165,3 @@ logger.info(f"Total validation data: {len(val_data)}")
 model = BigramLanguageModel(vocab_size)
 m = model.to(device)
 logger.info(m)
-
-# Create a pytorch optimizer
-optimizer = torch.optim.AdamW(m.parameters(), lr=args.learning_rate)
-
-### Training loop ###
-
-for iters in range(args.max_iters):
-    # every once in a while, evaluate the loss on train and val sets
-    losses = estimate_loss()
-    logger.info(
-        f"step {iter} train loss {losses['train']:.4f}, val loss {losses['val']:.4f}"
-    )

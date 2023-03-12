@@ -21,33 +21,11 @@ logging_config = {
             "formatter": "minimal",
             "level": logging.DEBUG,
         },
-        "debug": {
-            "class": "logging.handlers.RotatingFileHandler",
-            "filename": Path(LOGS_DIR, "debug.log"),
-            "maxBytes": 10485760,  # 1 MB
-            "backupCount": 10,
-            "formatter": "minimal",
-            "level": logging.DEBUG,
-        },
-        "info": {
-            "class": "logging.handlers.RotatingFileHandler",
-            "filename": Path(LOGS_DIR, "info.log"),
-            "maxBytes": 10485760,  # 1 MB
-            "backupCount": 10,
-            "formatter": "detailed",
-            "level": logging.INFO,
-        },
-        "error": {
-            "class": "logging.handlers.RotatingFileHandler",
-            "filename": Path(LOGS_DIR, "error.log"),
-            "maxBytes": 10485760,  # 1 MB
-            "backupCount": 10,
-            "formatter": "detailed",
-            "level": logging.ERROR,
-        },
     },
     "root": {
-        "handlers": ["console", "debug", "info", "error"],
+        "handlers": [
+            "console",
+        ],
         "level": logging.INFO,
         "propagate": True,
     },
@@ -64,5 +42,5 @@ if __name__ == "__main__":
     logger.error("There's been a mistake with the process.")
     logger.critical("There is something terribly wrong and process may terminate.")
 
-    excep = TypeError("Only integers are allowed")
-    logger.error(f"got an exception: {excep}")
+    # excep = TypeError("Only integers are allowed")
+    # logger.error(f"got an exception: {excep}")
