@@ -3,9 +3,8 @@ import torch.nn as nn
 from simple_parsing import ArgumentParser
 from torch.nn import functional as F
 
-from config import config
 from config.args import Args
-from config.config import logger
+from config.logger import logger
 
 # Set seed
 torch.manual_seed(1337)
@@ -14,7 +13,7 @@ torch.manual_seed(1337)
 # !wget https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt
 
 # Reading data file
-with open("input.txt", "r", encoding="utf-8") as f:
+with open("input.txt", encoding="utf-8") as f:
     text = f.read()
 
 
@@ -27,6 +26,7 @@ with open("input.txt", "r", encoding="utf-8") as f:
 #     else:
 #         device = "cpu"
 #     return device
+
 
 # for m1 mac
 def set_device():
@@ -44,18 +44,6 @@ def gen_mapping(chars):
     return stoi, itos
 
 
-def encode(stoi):
-    # encoder: take a string, output a list of ints
-    encoded = lambda s: [stoi[c] for c in s]
-    return encoded
-
-
-def decode(itos):
-    # decode: take a list of ints, output a string
-    decoded = lambda l: "".join(itos[i] for i in l)
-    return decoded
-
-
 # Function to split data into train and val
 def split_data(data, split_ratio):
     # TODO create split function
@@ -70,10 +58,10 @@ def get_batch(split):
     # generate a small batch of data of input x and targets y
     data = train_data if split == "train" else val_data
     ix = torch.randint(
-        len(data) - block_size, (batch_size,)
+        len(data) - Args.block_size, (Args.batch_size,)
     )  # because last will start from -8 and go until the end of text
-    x = torch.stack([data[i : i + block_size] for i in ix])
-    y = torch.stack([data[i + 1 : i + block_size + 1] for i in ix])
+    x = torch.stack([data[i : i + Args.block_size] for i in ix])
+    y = torch.stack([data[i + 1 : i + Args.block_size + 1] for i in ix])
     return x, y
 
 
@@ -94,6 +82,7 @@ def estimate_loss(model, eval_iters):
 
 ### Model class ###
 
+
 # Our simple bigram model
 class BigramLanguageModel(nn.Module):
     def __init__(self, vocab_size):
@@ -105,7 +94,7 @@ class BigramLanguageModel(nn.Module):
         logits = self.token_embedding_table(idx)  # (B,T,C)
 
         # if no targets, then we ignore loss
-        if targets == None:
+        if targets is None:
             loss = None
         else:
             # reshape for loss, loss needs BxCxT instead
@@ -145,13 +134,24 @@ parser.add_arguments(Args, dest="options")
 args_namespace = parser.parse_args()
 args = args_namespace.options
 
-# Get all the unique characters in corpus
+# get all the unique characters in corpus
 chars = sorted(list(set(text)))
 vocab_size = len(chars)
 logger.info(f"Total vocabulary size is {vocab_size}.")
 
-# Generate the string to int mapping and vice versa
-stio, itos = gen_mapping(chars)
+# generate the string to int mapping and vice versa
+stoi, itos = gen_mapping(chars)
+
+
+# encoder: take a string, output a list of ints
+def encode(s):
+    return [stoi[c] for c in s]
+
+
+# decode: take a list of ints, output a string
+def decode(lst):
+    return "".join(itos[i] for i in lst)
+
 
 # Encode the dataset
 data = torch.tensor(encode(text), dtype=torch.long)
@@ -165,3 +165,13 @@ logger.info(f"Total validation data: {len(val_data)}")
 model = BigramLanguageModel(vocab_size)
 m = model.to(device)
 logger.info(m)
+
+# Create a pytorch optimizer
+optimizer = torch.optim.AdamW(m.parameters(), lr=args.learning_rate)
+
+### Training loop ###
+
+for iters in range(args.max_iters):
+    # every once in a while, evaluate the loss on train and val sets
+    losses = estimate_loss()
+    logger.info(f"step {iter} train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")

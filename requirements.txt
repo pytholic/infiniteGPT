@@ -1,6 +1,5 @@
-torch 
-torchvision 
---extra-index-url https://download.pytorch.org/whl/cu116
+torch
+torchvision
 simple-parsing
-clearml
 tqdm
+pre-commit
